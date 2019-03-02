@@ -16,6 +16,8 @@ void help(char** argv) {
 		<< std::endl;
 }
 
+VideoCapture vc;
+
 ///This method turns an image into a grayscale image 
 void makeGray(cv::Mat& src, cv::Mat& dst);
 
@@ -32,61 +34,119 @@ void askForInput(string& message, T& value) {
 
 int main(int argc, char** argv) {
 
-	if (argc < 2) {
-		help(argv);
-		return 0;
-	}
-
 	std::string groupName = "Group 4";
+	cv::VideoCapture cap = cv::VideoCapture("short.mp4");
 
-	//READ IMAGE
-	cv::Mat originalImage = imread(argv[1], -1);
-	if (originalImage.empty())
-	{
-		cout << "Could not read the image at the specified path." << endl;
+	if (!cap.isOpened()) { // check if we succeeded
+		std::cerr << "Couldn't open capture." << std::endl;
 		return -1;
 	}
-	string windowName = groupName;
 
-	cv::Mat gray, binary;
-	makeGray(originalImage, gray);
-
-	imshow(windowName, gray);
-
-	int threshold=100;
+	cv::Mat videoFrame;
+	int totalFrames = (int)cap.get(CV_CAP_PROP_FRAME_COUNT); //get total frame count
+	int frameNumber = 1;
+	int brighter = 0;
+	int threshold = 180;
 	double maxVal = 255;
+	double theta = CV_PI/ 45;
+	for (;;) {		
+		
+		cap >> videoFrame;
+		videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
+		cv::Mat frame; //scaled and processed frame
+		cv::resize(videoFrame, frame, Size(), 0.3, 0.3);
+		//cv::imshow(groupName, frame);
+		string windowName = groupName;
 
+		cv::Mat gray, binary, binaryBlured;
+		makeGray(frame, gray);
 
-	for (;;){
-		char option = waitKey(40);
+		
 
-		if (option == 84) //Capital T
-		{	
-			threshold+=5;
-			cout << "Binary: threshold: " << threshold << ", maxVal: " << maxVal << endl;
-		}if (option == 116) //Lowercase t
-		{
-			threshold-=5;
-			cout << "Binary: threshold: " << threshold << ", maxVal: " << maxVal << endl;
-		}
-		if (option == 77) //Capital M
-		{
-			maxVal+=5;
-			cout << "Binary: threshold: " << threshold << ", maxVal: " << maxVal << endl;
-		}
-		if (option == 109) //Lowercase m
-		{
-			maxVal-=5;
-			cout << "Binary: threshold: " << threshold << ", maxVal: " << maxVal << endl;
-		}
-		if (option == 13)
-			break;
 		createBinaryImage(gray, binary, threshold);
-		imshow(windowName, binary);
+		imshow(windowName + ". Binary", binary);
+
+		cv::medianBlur(binary, binaryBlured, 5);
+		imshow(windowName + ". MedianBlue", binaryBlured);
+
+		Mat canny;
+		Canny(gray, canny, threshold, maxVal, 3);
+		imshow(windowName + ". Canny", canny);
+
+
+		vector<Vec2f> lines;
+		cv::HoughLines(binaryBlured, lines, 1, theta, threshold);
+		cout << "Lines detected: " << lines.size() << endl;
+		for (size_t i = 0; i < lines.size(); i++)
+		{
+			float rho = lines[i][0], theta = lines[i][1]; Point pt1, pt2;
+			double a = cos(theta), b = sin(theta);
+			double x0 = a * rho, y0 = b * rho;
+			pt1.x = cvRound(x0 + 1000 * (-b));
+			pt1.y = cvRound(y0 + 1000 * (a));
+			pt2.x = cvRound(x0 - 1000 * (-b));
+			pt2.y = cvRound(y0 - 1000 * (a));
+			cout << "pt1: " << pt1.x << ", " << pt1.y << endl;
+			cout << "pt2: " << pt2.x << ", " << pt2.y << endl;
+			line(frame, pt1, pt2, Scalar(0, 225, 255), 1, CV_AA);
+		}
+
+		cv::imshow(groupName, frame);
+		//Check if Ran out of film
+		frameNumber++;
+		if (frameNumber > totalFrames) {
+			frameNumber = 1;
+			cap.set(CV_CAP_PROP_POS_FRAMES, 0); // reset video frame to 0
+		}
+
+
+
+		char option = waitKey(40);
+		if (option >= 0)
+		{
+			if (option == 66) //Capital B
+			{
+				brighter += 5;
+			}if (option == 98) //Lowercase b
+			{
+				brighter -= 5;
+			}
+			if (option == 84) //Capital T
+			{
+				threshold += 5;
+				cout << "Threshold: " << threshold << endl;
+			}if (option == 116) //Lowercase t
+			{
+				threshold -= 5;
+				cout << "Threshold: " << threshold << endl;
+			}
+			if (option == 77) //Capital M
+			{
+				maxVal += 5;
+				cout << "Max val: " << maxVal << endl;
+			}
+			if (option == 109) //Lowercase m
+			{
+				maxVal -= 5;
+				cout << "MaxVal: " << maxVal << endl;
+			}
+			if (option == 72) //Upper H
+			{
+				theta += 0.05;
+				cout << "theta: " << theta << endl;
+			}
+			if (option == 104) //Lowercase h
+			{
+				theta -= 0.05;
+				cout << "theta: " << theta << endl;
+			}
+			if (option == 13)
+				break;
+		}
+			
 	}
-
-	waitKey();
-
+	cap.release();
+	
 	destroyAllWindows();
 	return 0;
 }
