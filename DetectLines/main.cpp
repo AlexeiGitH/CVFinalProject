@@ -45,8 +45,10 @@ int main(int argc, char** argv) {
 	cv::Mat videoFrame;
 	int totalFrames = (int)cap.get(CV_CAP_PROP_FRAME_COUNT); //get total frame count
 	int frameNumber = 1;
-	int brighter = 0;
-	int threshold = 180;
+	int brighter = 100;
+	int threshold = 175;
+	int canyThreshold = 175;
+	int lineThreshold = 175;
 	double maxVal = 255;
 	double theta = CV_PI/ 45;
 	for (;;) {		
@@ -54,29 +56,42 @@ int main(int argc, char** argv) {
 		cap >> videoFrame;
 		videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
 		cv::Mat frame; //scaled and processed frame
-		cv::resize(videoFrame, frame, Size(), 0.3, 0.3);
+		cv::resize(videoFrame, frame, Size(), 0.2, 0.2);
 		//cv::imshow(groupName, frame);
 		string windowName = groupName;
 
 		cv::Mat gray, binary, binaryBlured;
 		makeGray(frame, gray);
-
 		
-
+		//BINARY FROM GRAY
 		createBinaryImage(gray, binary, threshold);
 		imshow(windowName + ". Binary", binary);
 
-		cv::medianBlur(binary, binaryBlured, 5);
-		imshow(windowName + ". MedianBlue", binaryBlured);
+		//BLUR BINARY
+		cv::medianBlur(binary, binaryBlured, 19);
+		
+		//DILATE BLURED BINARY
+		cv::Mat dilated;  // Result output
+		cv::dilate(binaryBlured, dilated, Mat(), Point(-1, -1), 2, 1, 1);
+
+		imshow(windowName + ". Dialted", dilated);
 
 		Mat canny;
-		Canny(gray, canny, threshold, maxVal, 3);
+		Canny(gray, canny, canyThreshold, maxVal, 3);
 		imshow(windowName + ". Canny", canny);
 
+		//MASK 
+		Mat cannyMasked;
+		canny.copyTo(cannyMasked, dilated);
+		imshow(windowName + ". Canny_Masked", cannyMasked);
+
+		cv::Mat cannyMaskedDilated;  // Result output
+		cv::dilate(cannyMasked, cannyMaskedDilated, Mat(), Point(-1, -1), 1, 1, 1);
+		imshow(windowName + ". Canny_Masked_Dilated", cannyMaskedDilated);
 
 		vector<Vec2f> lines;
-		cv::HoughLines(binaryBlured, lines, 1, theta, threshold);
-		cout << "Lines detected: " << lines.size() << endl;
+		cv::HoughLines(cannyMaskedDilated, lines, 7, theta, lineThreshold);
+
 		for (size_t i = 0; i < lines.size(); i++)
 		{
 			float rho = lines[i][0], theta = lines[i][1]; Point pt1, pt2;
@@ -86,8 +101,8 @@ int main(int argc, char** argv) {
 			pt1.y = cvRound(y0 + 1000 * (a));
 			pt2.x = cvRound(x0 - 1000 * (-b));
 			pt2.y = cvRound(y0 - 1000 * (a));
-			cout << "pt1: " << pt1.x << ", " << pt1.y << endl;
-			cout << "pt2: " << pt2.x << ", " << pt2.y << endl;
+			//cout << "pt1: " << pt1.x << ", " << pt1.y << endl;
+			//cout << "pt2: " << pt2.x << ", " << pt2.y << endl;
 			line(frame, pt1, pt2, Scalar(0, 225, 255), 1, CV_AA);
 		}
 
@@ -104,21 +119,41 @@ int main(int argc, char** argv) {
 		char option = waitKey(40);
 		if (option >= 0)
 		{
+			if (option == 67) //Capital C
+			{
+				canyThreshold += 2;
+				cout << "canyThreshold: " << canyThreshold << endl;
+			}if (option == 99) //Lowercase C
+			{
+				canyThreshold -= 2;
+				cout << "canyThreshold: " << canyThreshold << endl;
+			}
+			if (option == 76) //Capital L
+			{
+				lineThreshold += 2;
+				cout << "lineThreshold: " << lineThreshold << endl;
+			}if (option == 108) //Lowercase L
+			{
+				lineThreshold -= 2;
+				cout << "lineThreshold: " << lineThreshold << endl;
+			}
 			if (option == 66) //Capital B
 			{
 				brighter += 5;
+				cout << "Brightness: " << brighter << endl;
 			}if (option == 98) //Lowercase b
 			{
 				brighter -= 5;
+				cout << "Brightness: " << brighter << endl;
 			}
 			if (option == 84) //Capital T
 			{
 				threshold += 5;
-				cout << "Threshold: " << threshold << endl;
+				cout << "threshold: " << threshold << endl;
 			}if (option == 116) //Lowercase t
 			{
 				threshold -= 5;
-				cout << "Threshold: " << threshold << endl;
+				cout << "threshold: " << threshold << endl;
 			}
 			if (option == 77) //Capital M
 			{
