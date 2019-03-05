@@ -35,7 +35,7 @@ void askForInput(string& message, T& value) {
 int main(int argc, char** argv) {
 
 	std::string groupName = "Group 4";
-	cv::VideoCapture cap = cv::VideoCapture("short.mp4");
+	cv::VideoCapture cap = cv::VideoCapture("fixedzone.mp4");
 
 	if (!cap.isOpened()) { // check if we succeeded
 		std::cerr << "Couldn't open capture." << std::endl;
@@ -54,9 +54,9 @@ int main(int argc, char** argv) {
 	for (;;) {		
 		
 		cap >> videoFrame;
-		videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
+		//videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
 		cv::Mat frame; //scaled and processed frame
-		cv::resize(videoFrame, frame, Size(), 0.2, 0.2);
+		cv::resize(videoFrame, frame, Size(), 1, 1);
 		//cv::imshow(groupName, frame);
 		string windowName = groupName;
 
@@ -74,16 +74,16 @@ int main(int argc, char** argv) {
 		cv::Mat dilated;  // Result output
 		cv::dilate(binaryBlured, dilated, Mat(), Point(-1, -1), 2, 1, 1);
 
-		imshow(windowName + ". Dialted", dilated);
+		//imshow(windowName + ". Dialted", dilated);
 
 		Mat canny;
 		Canny(gray, canny, canyThreshold, maxVal, 3);
-		imshow(windowName + ". Canny", canny);
+		//imshow(windowName + ". Canny", canny);
 
 		//MASK 
 		Mat cannyMasked;
 		canny.copyTo(cannyMasked, dilated);
-		imshow(windowName + ". Canny_Masked", cannyMasked);
+		//imshow(windowName + ". Canny_Masked", cannyMasked);
 
 		cv::Mat cannyMaskedDilated;  // Result output
 		cv::dilate(cannyMasked, cannyMaskedDilated, Mat(), Point(-1, -1), 1, 1, 1);
@@ -106,6 +106,50 @@ int main(int argc, char** argv) {
 			line(frame, pt1, pt2, Scalar(0, 225, 255), 1, CV_AA);
 		}
 
+		///////////////////////////////////////////////////////////Human detection
+
+		/// Set up the pedestrian detector --> let us take the default one
+		HOGDescriptor hog;
+		hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
+
+		/// Set up tracking vector
+		vector<Point> track;
+
+		/// run the detector with default parameters. to get a higher hit-rate
+		/// (and more false alarms, respectively), decrease the hitThreshold and
+		/// groupThreshold (set groupThreshold to 0 to turn off the grouping completely).
+
+		///image, vector of rectangles, hit threshold, win stride, padding, scale, group th
+		Mat img = videoFrame.clone();
+		resize(img, img, Size(img.cols * 2, img.rows * 2));
+
+		vector<Rect> found;
+		vector<double> weights;
+
+		hog.detectMultiScale(img, found, weights);
+
+		/// draw detections and store location
+		for (size_t i = 0; i < found.size(); i++)
+		{
+			Rect r = found[i];
+			rectangle(img, found[i], cv::Scalar(0, 0, 255), 3);
+			stringstream temp;
+			temp << weights[i];
+			putText(img, temp.str(), Point(found[i].x, found[i].y + 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255));
+			track.push_back(Point(found[i].x + found[i].width / 2, found[i].y + found[i].height / 2));
+		}
+
+		/// plot the track so far
+		for (size_t i = 1; i < track.size(); i++) {
+			line(frame, track[i - 1], track[i], Scalar(255, 255, 0), 2);
+		}
+
+		/// Show
+		//imshow("detected person", img);
+		//waitKey(1);
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		cv::imshow(groupName, frame);
 		//Check if Ran out of film
 		frameNumber++;
@@ -113,8 +157,6 @@ int main(int argc, char** argv) {
 			frameNumber = 1;
 			cap.set(CV_CAP_PROP_POS_FRAMES, 0); // reset video frame to 0
 		}
-
-
 
 		char option = waitKey(40);
 		if (option >= 0)
