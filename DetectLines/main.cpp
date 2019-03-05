@@ -9,10 +9,10 @@ using namespace std;
 
 void help(char** argv) {
 	std::cout << "\n"
-		<< "2.2: Like 2.1, but 'using namespace cv: \n"
-		<< argv[0] << " <path/image>\n"
+		<< "Pass the name of the video file as an argument: \n"
+		<< argv[0] << " <path/video>\n"
 		<< "For example:\n"
-		<< argv[0] << " ../fruits.jpg\n"
+		<< argv[0] << " ../video1.mp4\n"
 		<< std::endl;
 }
 
@@ -22,7 +22,7 @@ VideoCapture vc;
 void makeGray(cv::Mat& src, cv::Mat& dst);
 
 ///a method to create a binary image from an input image
-cv::Mat createBinaryImage(cv::Mat& src, int threshold, double maxVal);
+cv::Mat createBinaryImage(cv::Mat& src, int threshold, double binaryImageMaxVal);
 void createBinaryImage(cv::Mat& src, cv::Mat& dst, int threshold, double maxVal = 255);
 
 template <class T>
@@ -31,26 +31,34 @@ void askForInput(string& message, T& value) {
 	cin >> value;
 }
 
-
 int main(int argc, char** argv) {
 
+	if (argc < 1) {
+		help(argv);
+		return 0;
+	}
+
 	std::string groupName = "Group 4";
-	cv::VideoCapture cap = cv::VideoCapture("short.mp4");
+	cv::VideoCapture cap = cv::VideoCapture(argv[1]);
 
 	if (!cap.isOpened()) { // check if we succeeded
-		std::cerr << "Couldn't open capture." << std::endl;
+		std::cerr << "Couldn't open video capture." << std::endl;
 		return -1;
 	}
 
 	cv::Mat videoFrame;
 	int totalFrames = (int)cap.get(CV_CAP_PROP_FRAME_COUNT); //get total frame count
 	int frameNumber = 1;
-	int brighter = 100;
-	int threshold = 175;
-	int canyThreshold = 175;
+
+
+	int brighter = 0;
+	int binaryImageThreshold = 130;
+	int cannyThreshold1 = 230;
+	int cannyThreshold2 = 250;
 	int lineThreshold = 175;
 	double maxVal = 255;
-	double theta = CV_PI/ 45;
+	double theta = CV_PI/2;
+	double rho = 4.5;
 	for (;;) {		
 		
 		cap >> videoFrame;
@@ -63,8 +71,10 @@ int main(int argc, char** argv) {
 		cv::Mat gray, binary, binaryBlured;
 		makeGray(frame, gray);
 		
+
+		//1) Prepare an image to use as a mask
 		//BINARY FROM GRAY
-		createBinaryImage(gray, binary, threshold);
+		createBinaryImage(gray, binary, binaryImageThreshold);
 		imshow(windowName + ". Binary", binary);
 
 		//BLUR BINARY
@@ -74,23 +84,29 @@ int main(int argc, char** argv) {
 		cv::Mat dilated;  // Result output
 		cv::dilate(binaryBlured, dilated, Mat(), Point(-1, -1), 2, 1, 1);
 
+		//Show Dialted
 		imshow(windowName + ". Dialted", dilated);
 
+		// 2) Detect edges using Canny alg.
+		//Canny edge detection
 		Mat canny;
-		Canny(gray, canny, canyThreshold, maxVal, 3);
+		Canny(gray, canny, cannyThreshold1, cannyThreshold2, 3);
 		imshow(windowName + ". Canny", canny);
 
-		//MASK 
+		// 3) Mask an image with edges using an image created on step 1)
 		Mat cannyMasked;
 		canny.copyTo(cannyMasked, dilated);
 		imshow(windowName + ". Canny_Masked", cannyMasked);
 
+		// 4) Dilate to remove noise
 		cv::Mat cannyMaskedDilated;  // Result output
 		cv::dilate(cannyMasked, cannyMaskedDilated, Mat(), Point(-1, -1), 1, 1, 1);
 		imshow(windowName + ". Canny_Masked_Dilated", cannyMaskedDilated);
 
+
+		// 5) Line detection
 		vector<Vec2f> lines;
-		cv::HoughLines(cannyMaskedDilated, lines, 7, theta, lineThreshold);
+		cv::HoughLines(cannyMaskedDilated, lines, rho, theta, lineThreshold);
 
 		for (size_t i = 0; i < lines.size(); i++)
 		{
@@ -119,14 +135,24 @@ int main(int argc, char** argv) {
 		char option = waitKey(40);
 		if (option >= 0)
 		{
+			//CANNY THRESHHOLD KEYS
 			if (option == 67) //Capital C
 			{
-				canyThreshold += 2;
-				cout << "canyThreshold: " << canyThreshold << endl;
+				cannyThreshold1 += 2;
+				cout << "canyThreshold1: " << cannyThreshold1 << endl;
 			}if (option == 99) //Lowercase C
 			{
-				canyThreshold -= 2;
-				cout << "canyThreshold: " << canyThreshold << endl;
+				cannyThreshold1 -= 2;
+				cout << "canyThreshold1: " << cannyThreshold1 << endl;
+			}
+			if (option == 86) //Capital V
+			{
+				cannyThreshold2 += 2;
+				cout << "cannyThreshold2: " << cannyThreshold2 << endl;
+			}if (option == 118) //Lowercase V
+			{
+				cannyThreshold2 -= 2;
+				cout << "cannyThreshold2: " << cannyThreshold2 << endl;
 			}
 			if (option == 76) //Capital L
 			{
@@ -137,6 +163,7 @@ int main(int argc, char** argv) {
 				lineThreshold -= 2;
 				cout << "lineThreshold: " << lineThreshold << endl;
 			}
+			//IMAGE BRIGTHNESS KEYS
 			if (option == 66) //Capital B
 			{
 				brighter += 5;
@@ -146,15 +173,18 @@ int main(int argc, char** argv) {
 				brighter -= 5;
 				cout << "Brightness: " << brighter << endl;
 			}
+
+			//binaryImageThreshold
 			if (option == 84) //Capital T
 			{
-				threshold += 5;
-				cout << "threshold: " << threshold << endl;
+				binaryImageThreshold += 5;
+				cout << "threshold: " << binaryImageThreshold << endl;
 			}if (option == 116) //Lowercase t
 			{
-				threshold -= 5;
-				cout << "threshold: " << threshold << endl;
+				binaryImageThreshold -= 5;
+				cout << "threshold: " << binaryImageThreshold << endl;
 			}
+
 			if (option == 77) //Capital M
 			{
 				maxVal += 5;
@@ -165,15 +195,28 @@ int main(int argc, char** argv) {
 				maxVal -= 5;
 				cout << "MaxVal: " << maxVal << endl;
 			}
+
+			//LINES DETECTION KEYS
+
 			if (option == 72) //Upper H
 			{
-				theta += 0.05;
+				theta += 0.01;
 				cout << "theta: " << theta << endl;
 			}
 			if (option == 104) //Lowercase h
 			{
-				theta -= 0.05;
+				theta -= 0.01;
 				cout << "theta: " << theta << endl;
+			}
+			if (option == 82) //Upper H
+			{
+				rho += 0.5;
+				cout << "rho: " << rho << endl;
+			}
+			if (option == 114) //Lowercase h
+			{
+				rho -= 0.5;
+				cout << "rho: " << rho << endl;
 			}
 			if (option == 13)
 				break;
