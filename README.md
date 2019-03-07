@@ -1,4 +1,6 @@
-Tasks to be completed:
+Before adding new code read Contributing guidelines.
+
+Tasks to be completed for the next week:
 ---
 1) Find videos and download them.
 2) Randomly select 70% of them and move to a folder named "Training".
