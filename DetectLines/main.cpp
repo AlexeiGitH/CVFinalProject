@@ -51,14 +51,16 @@ int main(int argc, char** argv) {
 	int frameNumber = 1;
 
 
-	int brighter = 0;
+	int brighter = -20;
 	int binaryImageThreshold = 130;
 	int cannyThreshold1 = 230;
 	int cannyThreshold2 = 250;
 	int lineThreshold = 175;
 	double maxVal = 255;
-	double theta = CV_PI/2;
+	double theta = CV_PI/1.5;
+	double thetaLeftDiagonal = CV_PI / 4.72;
 	double rho = 4.5;
+
 	for (;;) {		
 		
 		cap >> videoFrame;
@@ -70,7 +72,6 @@ int main(int argc, char** argv) {
 
 		cv::Mat gray, binary, binaryBlured;
 		makeGray(frame, gray);
-		
 
 		//1) Prepare an image to use as a mask
 		//BINARY FROM GRAY
@@ -103,10 +104,19 @@ int main(int argc, char** argv) {
 		cv::dilate(cannyMasked, cannyMaskedDilated, Mat(), Point(-1, -1), 1, 1, 1);
 		imshow(windowName + ". Canny_Masked_Dilated", cannyMaskedDilated);
 
+		//	Apply morphological closing to the binary image using a 3x3 square kernel
+		int kernelSize = 3; //kernel size
+		cv::Mat elem = 255 * cv::Mat::ones(kernelSize, kernelSize, CV_8UC1); // 3x3 kernel matrix filled with 255
+		cv::Mat closed;
+		cv::morphologyEx(cannyMasked, closed, MORPH_CLOSE, elem);
+
+		cv::namedWindow(groupName + ". Closed", cv::WINDOW_AUTOSIZE);
+		cv::imshow(groupName + ". Closed", closed);
+
 
 		// 5) Line detection
 		vector<Vec2f> lines;
-		cv::HoughLines(cannyMaskedDilated, lines, rho, theta, lineThreshold);
+		cv::HoughLines(closed, lines, rho, theta, lineThreshold);
 
 		for (size_t i = 0; i < lines.size(); i++)
 		{
@@ -130,7 +140,17 @@ int main(int argc, char** argv) {
 			cap.set(CV_CAP_PROP_POS_FRAMES, 0); // reset video frame to 0
 		}
 
+		// Apply morphological opening to the binary image using a 3x3 square kernel (all set to 255). 
 
+		cv::Mat opened;
+	
+		cv::morphologyEx(cannyMasked, opened, MORPH_OPEN, elem); //aply opening
+
+		cv::namedWindow(groupName + ". Opened", cv::WINDOW_AUTOSIZE);
+		cv::imshow(groupName + ". Opened", opened);
+
+
+		
 
 		char option = waitKey(40);
 		if (option >= 0)
