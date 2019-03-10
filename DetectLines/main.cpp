@@ -46,10 +46,26 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	cv::Mat videoFrame;
-	int totalFrames = (int)cap.get(CV_CAP_PROP_FRAME_COUNT); //get total frame count
-	int frameNumber = 1;
+	double fps = cap.get(CV_CAP_PROP_FPS);
+	// Default resolution of the frame is obtained.The default resolution is system dependent. 
+	int inputVideoFrameWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+	int inputVideoFrameHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+	//get total frame count
+	int totalFrames = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
+	int codecType = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
 
+	string outputVideoName = (string)argv[1] + "-out.avi";
+	Size size = Size(inputVideoFrameWidth*0.2, inputVideoFrameHeight*0.2);
+
+	VideoWriter outputVideo;                                        // Open the output
+	outputVideo.open(outputVideoName, -1, cap.get(CV_CAP_PROP_FPS), size, true);
+
+	if (!outputVideo.isOpened())
+	{
+		cout << "Could not open the output video for write: " << argv[1] << endl;
+	}
+
+	//VideoWriter videoResult("Fragment.out.mp4", CV_FOURCC('X', '2', '6', '4'), fps, Size(frame_width, frame_height));
 
 	int brighter = -20;
 	int binaryImageThreshold = 130;
@@ -57,12 +73,17 @@ int main(int argc, char** argv) {
 	int cannyThreshold2 = 250;
 	int lineThreshold = 175;
 	double maxVal = 255;
-	double theta = CV_PI/1.5;
+	double theta = CV_PI / 1.5;
 	double thetaLeftDiagonal = CV_PI / 4.72;
 	double rho = 4.5;
 
-	for (;;) {		
-		
+	int frameNumber = 1;
+	cv::Mat videoFrame;
+	for (;;) {
+
+		if (frameNumber % 5) {
+			cout << "Frame number is " << frameNumber << endl;
+		}
 		cap >> videoFrame;
 		videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
 		cv::Mat frame; //scaled and processed frame
@@ -80,7 +101,7 @@ int main(int argc, char** argv) {
 
 		//BLUR BINARY
 		cv::medianBlur(binary, binaryBlured, 19);
-		
+
 		//DILATE BLURED BINARY
 		cv::Mat dilated;  // Result output
 		cv::dilate(binaryBlured, dilated, Mat(), Point(-1, -1), 2, 1, 1);
@@ -114,45 +135,61 @@ int main(int argc, char** argv) {
 		cv::imshow(groupName + ". Closed", closed);
 
 
-		// 5) Line detection
-		vector<Vec2f> lines;
-		cv::HoughLines(closed, lines, rho, theta, lineThreshold);
 
-		for (size_t i = 0; i < lines.size(); i++)
-		{
-			float rho = lines[i][0], theta = lines[i][1]; Point pt1, pt2;
-			double a = cos(theta), b = sin(theta);
-			double x0 = a * rho, y0 = b * rho;
-			pt1.x = cvRound(x0 + 1000 * (-b));
-			pt1.y = cvRound(y0 + 1000 * (a));
-			pt2.x = cvRound(x0 - 1000 * (-b));
-			pt2.y = cvRound(y0 - 1000 * (a));
-			//cout << "pt1: " << pt1.x << ", " << pt1.y << endl;
-			//cout << "pt2: " << pt2.x << ", " << pt2.y << endl;
-			line(frame, pt1, pt2, Scalar(0, 225, 255), 1, CV_AA);
+		Size frameSize = frame.size();
+		int frameWidth = frameSize.width;
+		int frameHeight = frameSize.height;
+
+		// 5) Line detection
+		if (true) {
+			vector<Vec2f> lines;
+			cv::HoughLines(closed, lines, rho, theta, lineThreshold);
+
+
+			for (size_t i = 0; i < lines.size(); i++)
+			{
+				float rho = lines[i][0], theta = lines[i][1];
+
+				Point pt1, pt2;
+				double a = cos(theta), b = sin(theta);
+				double x0 = a * rho, y0 = b * rho;
+				//cout << "a (cos(theta)) = " << a << "; b (sin(theta)) = " << b << endl;
+				//cout << "x0 = " << x0 << "; y0  = " << y0 << endl;
+				pt1.x = cvRound(x0 + frameWidth * (-b));
+				pt1.y = cvRound(y0 + inputVideoFrameHeight * (a));
+				pt2.x = cvRound(x0 - frameWidth * (-b));
+				pt2.y = cvRound(y0 - inputVideoFrameHeight * (a));
+				//cout << "pt1: " << pt1.x << ", " << pt1.y << endl;
+				//cout << "pt2: " << pt2.x << ", " << pt2.y << endl;
+				line(frame, pt1, pt2, Scalar(0, 225, 255), 1, CV_AA);
+			}
+		}
+		else {
+			vector<Vec4i> lines;
+			HoughLinesP(closed, lines, rho, theta, lineThreshold, 30, 10);
+			for (size_t i = 0; i < lines.size(); i++)
+			{
+				Vec4i l = lines[i];
+				line(frame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 1, LINE_AA);
+			}
+
 		}
 
+
 		cv::imshow(groupName, frame);
+
+		// Write the frame into the file 'outcpp.avi'
+		//outputVideo << frame;
+
 		//Check if Ran out of film
 		frameNumber++;
 		if (frameNumber > totalFrames) {
+			//break;
 			frameNumber = 1;
 			cap.set(CV_CAP_PROP_POS_FRAMES, 0); // reset video frame to 0
 		}
 
-		// Apply morphological opening to the binary image using a 3x3 square kernel (all set to 255). 
-
-		cv::Mat opened;
-	
-		cv::morphologyEx(cannyMasked, opened, MORPH_OPEN, elem); //aply opening
-
-		cv::namedWindow(groupName + ". Opened", cv::WINDOW_AUTOSIZE);
-		cv::imshow(groupName + ". Opened", opened);
-
-
-		
-
-		char option = waitKey(40);
+		char option = waitKey(fps);
 		if (option >= 0)
 		{
 			//CANNY THRESHHOLD KEYS
@@ -241,22 +278,24 @@ int main(int argc, char** argv) {
 			if (option == 13)
 				break;
 		}
-			
+
 	}
+
 	cap.release();
-	
+	outputVideo.release();
+
 	destroyAllWindows();
 	return 0;
 }
 
 
 void makeGray(cv::Mat& src, cv::Mat& dst) {
-	cv::cvtColor(src,dst,CV_RGB2GRAY);
+	cv::cvtColor(src, dst, CV_RGB2GRAY);
 }
 
-cv::Mat createBinaryImage(cv::Mat& src, int threshold, double maxVal){
+cv::Mat createBinaryImage(cv::Mat& src, int threshold, double maxVal) {
 	Mat dst;
-	cv::threshold(src,dst,threshold, maxVal, THRESH_BINARY);
+	cv::threshold(src, dst, threshold, maxVal, THRESH_BINARY);
 	return dst;
 }
 
