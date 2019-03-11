@@ -16,8 +16,6 @@ void help(char** argv) {
 		<< std::endl;
 }
 
-VideoCapture vc;
-
 ///This method turns an image into a grayscale image 
 void makeGray(cv::Mat& src, cv::Mat& dst);
 
