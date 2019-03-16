@@ -7,3 +7,4 @@ Release/
 /DetectLines/vid01.mp4
 /DetectLines/out.mp4
 /.vs/CVIFinalProject/v15
+*.DS_Store
