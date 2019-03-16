@@ -24,9 +24,13 @@ void drawCircle(Mat image, Point point);
 void exit(string fileName);
 
 int main(int argc, char** argv) {
+
+	if (argc < 2)
+		cerr << "Pass the name of the file that contains a list of images\n";
+
 	string groupName = "Group 4";
 
-	string fileName = "images-all.txt";
+	string fileName = argv[1];
 	CSVReader fileReader(fileName);
 	fileReader.readLines();
 

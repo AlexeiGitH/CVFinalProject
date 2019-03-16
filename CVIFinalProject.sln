@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DetectLines", "DetectLines\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageAnnotator", "ImageAnnotator\ImageAnnotator.vcxproj", "{E9123949-05D7-442C-9DC8-44AABE1F13FA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HumanDetect", "HumanDetect\HumanDetect.vcxproj", "{17F027AB-1653-456A-846D-52D08CEAB79D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,12 @@ Global
 		{E9123949-05D7-442C-9DC8-44AABE1F13FA}.Release|Any CPU.ActiveCfg = Release|Win32
 		{E9123949-05D7-442C-9DC8-44AABE1F13FA}.Release|Win32.ActiveCfg = Release|Win32
 		{E9123949-05D7-442C-9DC8-44AABE1F13FA}.Release|Win32.Build.0 = Release|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Debug|Win32.Build.0 = Debug|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Release|Any CPU.ActiveCfg = Release|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Release|Win32.ActiveCfg = Release|Win32
+		{17F027AB-1653-456A-846D-52D08CEAB79D}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
