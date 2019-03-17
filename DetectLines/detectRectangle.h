@@ -26,4 +26,54 @@ public:
 	bool detectRectOverlap(cv::Rect r1, cv::Rect r2) {
 		return ((r1 & r2).area() > 0);
 	}
+
+	void calculateAccuracy(cv::Point *p, cv::Rect *r, int numPoint, int numRect) {
+		bool found = false;
+		int FP = 0;
+		int FN = 0;
+		int TP = 0;
+		int TN = 0;
+		int total = numPoint;
+
+		//for every rectangle, check if there is a point inside
+		//if true, add a true positive and stop checking (prevents multiple points from adding multiple TP for a single rect)
+		//if no point is found inside the rect, add a false negative
+		for (int j = 0; j < numRect; j++) {
+			for (int k = 0; k < numPoint; k++) {
+				if (detectPoint(p[k], r[j])) {
+					if (!found) {
+						TP++;
+						found = true;
+					}
+				}
+			}
+			if (!found) {
+				FP++;
+			}
+
+		}
+
+		//reset found
+		found = false;
+
+		//for every point, check if there is a rectangle that bounds the point
+		//if no rectangle is found, add a false negative
+		for (int x = 0; x < numPoint; x++) {
+			for (int y = 0; y < numRect; y++) {
+				if (detectPoint(p[x], r[y])) {
+					found = true;
+				}
+			}
+			if (!found) {
+				FN++;
+			}
+		}
+
+		double R = TP / (TP + FN);
+
+		double P = TP / (TP + FP);
+
+		double F = (1 + 1)*((P*R) / ((1 * P) + R));
+
+	}
 };
