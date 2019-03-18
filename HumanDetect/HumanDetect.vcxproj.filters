@@ -27,6 +27,9 @@
     <ClCompile Include="dirtycode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HogDetector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Shared\CSVReader.h">
