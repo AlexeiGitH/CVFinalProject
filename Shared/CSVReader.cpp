@@ -11,18 +11,18 @@ CSVReader::CSVReader(string fileName)
 	file.open(fileName);
 }
 
-void CSVReader::readLines() {
+void CSVReader::readLines(char delim) {
 	if (!file.is_open())
 		return;
 
 	string line;
 	while (file.good())
 	{
-		getline(file, line, ','); 
+		getline(file, line, delim); 
 		lines.push_back(line);
 	}
 }
-vector<string> CSVReader::readLines(string fileName)
+vector<string> CSVReader::readLines(string fileName, char delim)
 {
 	vector<string> l;
 	ifstream f;
@@ -30,7 +30,7 @@ vector<string> CSVReader::readLines(string fileName)
 	f.open(fileName);
 	while (f.good())
 	{
-		 getline(f, line, ',' ); 
+		 getline(f, line, delim);
 		 l.push_back(line);
 	}
 	f.close();

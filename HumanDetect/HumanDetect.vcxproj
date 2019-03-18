@@ -84,6 +84,7 @@
     <ClCompile Include="Haar_Cascade_Classifier.cpp" />
     <ClCompile Include="dirtycode.cpp" />
     <ClCompile Include="HogDetector.cpp" />
+    <ClCompile Include="detect.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
