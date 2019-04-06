@@ -13,6 +13,14 @@ void drawCircle(cv::Mat img, cv::Rect r, int scale) {
 	circle(img, Point((r.x+ (r.width / 2))*scale, (r.y+(r.height/1.25))*scale), (r.width / 2.5)*scale, Scalar(50, 255, 210), 2);
 }
 
+Rect rectForCircle(cv::Rect r) {
+	return Rect((r.x + r.width*0.0625), (r.y + r.height - (r.width*0.9*0.75)), r.width*0.9, r.width*0.9*0.75);
+}
+
+cv::Rect scaleRect(cv::Rect r, double scale) {
+	return Rect((r.x*scale), (r.y*scale), (r.width*scale), (r.height*scale));
+}
+
 int main(int argc, char** argv) {
 
 	if (argc < 1) {
@@ -53,18 +61,23 @@ int main(int argc, char** argv) {
 
 	rectangle(img2, r, Scalar(10, 255, 10));
 
-	circle(img2, Point(rx+(r.width/2), ry+(r.height/1.25)), r.width / 2.5, Scalar(100, 55, 210), 2);
+	//circle(img2, Point(rx+(r.width/2), ry+(r.height/1.25)), r.width / 2.5, Scalar(100, 55, 210), 2);
+
+	cv::Rect r2 = rectForCircle(r);
+
+	rectangle(img2, r2, Scalar(50, 50, 50));
 
 	cv::namedWindow(groupName + ". Gray", cv::WINDOW_AUTOSIZE);
 	cv::imshow(groupName + ". Gray", img2);
 
 	waitKey();
 
-	//	Apply histogram equalization 
+	//after growth
 	cv::Mat img3 = img1;
-	drawCircle(img3, r, scale);
-	cv::namedWindow(groupName + ". circled", cv::WINDOW_AUTOSIZE);
-	cv::imshow(groupName + ". circled", img3);
+	cv::Rect r3 = scaleRect(r2, scale);
+	rectangle(img3, r3, Scalar(150, 0, 255));
+	cv::namedWindow(groupName + ". scaled", cv::WINDOW_AUTOSIZE);
+	cv::imshow(groupName + ". scaled", img3);
 	
 	waitKey();
 
