@@ -1,12 +1,17 @@
-Before adding new code read Contributing guidelines.
+Instructions for image annotation:
 
-Tasks to be completed for the next week:
----
-1) Find videos and download them.
-2) Randomly select 70% of them and move to a folder named "Training".
-4) Move the rest of the video files to a folder named "Testing"
-4) Create a file named TrainingFiles. Copy all file names from folder Training to the file, putting each name on a new line
-5) Create a file named TestingFiles. Copy all file names from folder Testing to the file, putting each name on a new line
+* -d is directory where the images are
+* -a annotations output file name
+* -i images output file name
 
----
+Command example:
+`python gather_annotations.py -d Train/ -a annot.npy -i images.npy`
+
+in this example Train/ is a directory where the images are
+  - annot.npy - is a file where the results are saved
+  - images.npy - is a file where image paths are saved 
+
+Click space to move to the next picture.
+
+You cannot undo actions and move back
 
