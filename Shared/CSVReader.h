@@ -15,8 +15,8 @@ class CSVReader
 public:
 	CSVReader(void);
 	CSVReader(string fileName);
-	void readLines();
-	vector<string> readLines(string fileName);
+	void readLines(char delim = ',');
+	vector<string> readLines(string fileName, char delim = ',');
 	vector<string>& getLines();
 	~CSVReader(void);
 };
