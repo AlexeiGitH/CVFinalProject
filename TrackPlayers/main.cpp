@@ -179,7 +179,64 @@ bool save(Mat& frame, string toFile) {
 
 double PrepareForProcessing(Mat& in, Mat& out, int colorSpace ) {
 	//make gray
-	cv::cvtColor(in, out, colorSpace);
+	//cv::cvtColor(in, out, colorSpace);
+
+	cv::cvtColor(in, out, COLOR_BGR2HSV);
+
+	for (int i = 0; i < in.rows; i++)
+	{
+		for (int j = 0; j < in.cols; j++)
+		{
+			if (in.at<cv::Vec3b>(i, j)[0] > 125 || in.at<cv::Vec3b>(i, j)[1] == 0 || in.at<cv::Vec3b>(i, j)[2] == 0)
+			{
+				//originalImage.at<Vec3b>(i,j) = 255;
+				out.at<cv::Vec3b>(i, j)[0] = 255; // change it to white
+				out.at<cv::Vec3b>(i, j)[1] = 255;
+				out.at<cv::Vec3b>(i, j)[2] = 255;
+				//   cout << i<<" " <<j<< endl; 
+			}
+		}
+	}
+
+	for (int i = 0; i < in.rows; i++)
+	{
+		for (int j = 0; j < in.cols; j++)
+		{
+			if (in.at<cv::Vec3b>(i, j)[0] < 10 && in.at<cv::Vec3b>(i, j)[1] < 10 && in.at<cv::Vec3b>(i, j)[2] < 10)
+			{
+				//originalImage.at<Vec3b>(i,j) = 255;
+				out.at<cv::Vec3b>(i, j)[0] = 255; // change it to white
+				out.at<cv::Vec3b>(i, j)[1] = 255;
+				out.at<cv::Vec3b>(i, j)[2] = 255;
+				//   cout << i<<" " <<j<< endl; 
+			}
+		}
+	}
+
+	cv::cvtColor(out, out, COLOR_HSV2BGR);
+	cv::cvtColor(out, out, COLOR_BGR2GRAY);
+
+	//cv::resize(out, out, Size(out.cols/2, out.rows/2));
+
+	/*double alpha = 0.5;
+	int beta = 8;
+
+	Mat new_image = Mat::zeros(in.size(), in.type());
+
+	for (int y = 0; y < in.rows; y++)
+	{
+		for (int x = 0; x < in.cols; x++)
+		{
+			for (int c = 0; c < 3; c++)
+			{
+				new_image.at<Vec3b>(y, x)[c] =
+					saturate_cast<uchar>(alpha*(in.at<Vec3b>(y, x)[c]) + beta);
+			}
+		}
+	}
+
+	out = new_image;*/
+
 
 
 	//out *= 1.2;

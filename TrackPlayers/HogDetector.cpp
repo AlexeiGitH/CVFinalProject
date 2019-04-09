@@ -17,7 +17,7 @@ public:
 	double scale;
 
 	//These parameters work well. Scale any other than 1.05 does not work as well as when the threshold is >< 0
-	HOGDetector(HOGDetectorMode mode): hog(), hitThreshold(0), winStride(Size(8, 8)), padding(Size(32, 32)), scale(1.05)
+	HOGDetector(HOGDetectorMode mode): hog(), hitThreshold(0), winStride(Size(16, 16)), padding(Size(16, 16)), scale(1.5)
 	{
 		mode_ = mode;
 		switch (mode_)
