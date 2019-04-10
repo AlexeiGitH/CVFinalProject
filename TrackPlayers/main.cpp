@@ -15,7 +15,7 @@ using namespace std;
 void DrawDetected(Mat& frame, std::vector<Rect>& detected, Scalar color = Scalar(0, 0, 255), int thinkness = 1);
 //saves an image to a file
 bool save(Mat& frame, string toFile);
-double PrepareForProcessing(Mat& in, Mat& out, int colorSpace = COLOR_BGR2YUV);
+double PrepareForProcessing(Mat& in, Mat& out, int colorSpace = COLOR_BGR2YUV, double contrast = 0);
 void MakeMaskFromEges(Mat& src, Mat& dst);
 void MakeMask(Mat& src, Mat& dst);
 
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 		cerr << "No input image " << endl;
 		return 1;
 	}
-
+	/*
 	if (false){
 		cv::VideoCapture cap = cv::VideoCapture(argv[1]);
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 		}
 
 		double fps = cap.get(CV_CAP_PROP_FPS);
-		// Default resolution of the frame is obtained.The default resolution is system dependent. 
+		// Default resolution of the frame is obtained.The default resolution is system dependent.
 		int inputVideoFrameWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
 		int inputVideoFrameHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 		//get total frame count
@@ -86,81 +86,59 @@ int main(int argc, char** argv) {
 				break;
 		}
 	}
+	*/
+
+	string imageName = argv[1];
+	Mat img = cv::imread(imageName);
+	if (img.empty()) {
+		cerr << "could not open image named '" << argv[1] << ",\n";
+	}
+
+	//File Name
+	std::size_t dotIdx = imageName.find_last_of(".");
+	string outFileNameWithoutExt = imageName.substr(0, dotIdx);
+	size_t slashIdx = imageName.find_last_of("/");
+	string outFileName = outFileNameWithoutExt.substr(slashIdx + 1);
+	string outFileExt = imageName.substr(dotIdx);
+
+	if (true) {
+
+		double hitThreshold = 0;
+		// Window stride.It must be a multiple of block stride
+		Size winStride = Size(4, 4);
+		Size padding = Size(16, 16);
+		//oefficient of the detection window increase.
+		//scaleFactor - Parameter specifying how much the image size is reduced at each image scale.
+		double scale = 1.05;
+		//group_threshold – Coefficient to regulate the similarity threshold. When detected, some objects can be covered by many rectangles. 0 means not to perform grouping. See groupRectangles() .
+		double group_threshold = 2;
+		vector<Rect> detected;
+		vector<double> weights;
+
+		Mat mask, preparedImage, preparedImageMasked;
+		MakeMask(img, mask);
+		PrepareForProcessing(img, preparedImage, COLOR_RGB2YUV, -10);
+		applyMask(preparedImage, preparedImageMasked, mask);
+		imwrite("Prepared.jpg", preparedImageMasked);
+
+		hog.detectMultiScale(preparedImageMasked, detected, weights, hitThreshold, winStride, padding, scale, group_threshold, false);
+
+		cv::Mat out = img.clone();
+		DrawDetected(out, detected);
+
+		string outfileName = outFileName + "-out-Result" + outFileExt;
+		save(out, outfileName);
+
+		cv::Mat outMarked = out.clone();
+		for (auto d : detected)
+		{
+			MarkDetectedPlayer(outMarked, d);
+		}
+		save(outMarked, "marked.jpg");
+		imshow("Result", outMarked);
+	}
 	
-		string imageName = argv[1];
-		Mat img = cv::imread(imageName);
-		if (img.empty()) {
-			cerr << "could not open image named '" << argv[1] << ",\n";
-		}
-
-		//File Name
-		std::size_t dotIdx = imageName.find_last_of(".");
-		string outFileNameWithoutExt = imageName.substr(0, dotIdx);
-		size_t slashIdx = imageName.find_last_of("/");
-		string outFileName = outFileNameWithoutExt.substr(slashIdx + 1);
-		string outFileExt = imageName.substr(dotIdx);
-
-		if (true) {
-
-			double hitThreshold = 0;
-			Size winStride = Size(10, 10);
-			Size padding = Size(16, 16);
-			double scale = 1.05;
-
-			vector<Rect> detected;
-			vector<double> weights;
-			Mat preparedImage;
-			PrepareForProcessing(img, preparedImage);
-
-			imwrite("Prepared.jpg", preparedImage);
-
-			//waitKey(0);
-			hog.detectMultiScale(preparedImage, detected, weights, hitThreshold, winStride, padding, scale, 2, false);
-
-			cv::Mat out = img.clone();
-			DrawDetected(out, detected);
-
-			string outfileName = outFileName + "-out-unchanged-HOG-yuv"  + outFileExt;
-			save(out, outfileName);
-
-			cv::Mat outMarked = out.clone();
-			for (auto d : detected)
-			{
-				MarkDetectedPlayer(outMarked, d);
-			}
-			save(outMarked, "marked.jpg");
-			imshow("Result", outMarked);
-		}
-		if (false) {
-			Mat mask, prepared;
-			MakeMask(img, mask);
-			img.copyTo(prepared, mask);
-
-			//Mat prepared;
-			//double scaleResized = PrepareForProcessing(img, prepared);
-
-			imshow("preparedImage", prepared);
-
-			vector<Rect> detected;
-			vector<double> weights;
-			double hitThreshold = 0;
-			Size winStride = Size(8, 8);
-			Size padding = Size(32, 32);
-			double scale = 1.05;
-			hog.detectMultiScale(prepared, detected, weights, hitThreshold, winStride, padding, scale, 2, false);
-			/*
-			for (size_t i = 0; i < detected.size(); i++)
-			{
-				Rect scaledRect = scaleRect(detected[i], 1/scaleResized);
-				detected[i] = scaledRect;
-			}*/
-			cv::Mat out = img.clone();
-			DrawDetected(out, detected);
-
-			string outfileName = outFileName + "-out-prepared-HOG" + outFileExt;
-			save(out, outfileName);
-		}
-	
+	//waitKey(0);
 	return 0;
 }
 
@@ -177,18 +155,25 @@ bool save(Mat& frame, string toFile) {
 	return cv::imwrite(toFile, frame);
 }
 
-double PrepareForProcessing(Mat& in, Mat& out, int colorSpace ) {
-	//make gray
-	cv::cvtColor(in, out, colorSpace);
+double PrepareForProcessing(Mat& src, Mat& dst, int colorSpace, double contrast) {
 
+	//cv::cvtColor(in, out, colorSpace);
+
+	addContrast(src, dst, contrast);
+
+	Mat imageHSV, diff;
+	cv::cvtColor(src, imageHSV, COLOR_RGB2HSV);
+
+	absdiff(src, imageHSV, diff);
+	absdiff(imageHSV, diff, dst);
 
 	//out *= 1.2;
 	//out += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
 
 	//equalizeHist(in, out);
 	/*
-	This does not help much
-	Mat mean1;
+	//This does not help much
+
 	double sp =10.0, sr=20.0;
 	int maxLevel = 1;
 	cv::pyrMeanShiftFiltering(out, out, sp, sr, maxLevel);
@@ -240,36 +225,51 @@ void MakeMaskFromEges(Mat& src, Mat& dst) {
 
 void MakeMask(Mat& src, Mat& dst) {
 
-	Mat gray, binary, binaryBlured;
-	cv::cvtColor(src, gray, CV_RGB2GRAY);
+	/*
+	Algorithm:
+	1) Add contrast
+	2) Convert to grayscale
+	3) Threshhold gray image
+		Use big kernel size to remove players and noise from the rink
+	4) Apply morph opening to remove small details
+	5) Blur the image
+		Use high value, like 25
+	6) Dilate to remove some big chunks
+	7) Erode to return to get back lost area of the rink
+	9) Use bitwise flip to get a mask
 
-	//1) Prepare an image to use as a mask
-	//BINARY FROM GRAY
-	int binaryImageThreshold = 130;
+	*/
+	// 1) add contrast
+	Mat img;
+	addContrast(src, img, 30);
+
+	//2) MAKE GRAY
+	Mat gray, binary, binaryBlured;
+	cv::cvtColor(img, gray, CV_RGB2GRAY);
+
+	//3) BINARY FROM GRAY
+	int binaryImageThreshold = 100;
 	createBinaryImage(gray, binary, binaryImageThreshold, 255);
 	//imshow("Binary", binary);
 
-	//BLUR BINARY
-	cv::medianBlur(binary, binaryBlured, 3);
+	// 4) Open thresholded image
+	int kernelSize = 25; //kernel size
+	cv::Mat elem = 255 * cv::Mat::ones(kernelSize, kernelSize, CV_8UC1); // 19x19 kernel matrix filled with 255
+	cv::morphologyEx(binary, binary, MORPH_OPEN, elem);
+
+	// 5) BLUR BINARY
+	cv::medianBlur(binary, binary, 25);
 	//imshow("Blur Binary", binaryBlured);
 
-	//DILATE BLURED BINARY
-	cv::Mat dilated;  // Result output
-	cv::dilate(binaryBlured, dilated, Mat(), Point(-1, -1), 2, 1, 1);
-	//Show Dialted
-	//imshow("Dialted", dilated);
+	// 6) Open blured
+	cv::dilate(binary, binary, elem);
+	cv::dilate(binary, binary, elem);
 
-	cv::Mat filled = dilated.clone();
-	cv::floodFill(filled, Point(filled.size().width / 4, filled.size().height / 2), cvScalar(255, 255, 255));
-	//imshow("Filled", filled);
-
-	// 3) Mask an image with edges using an image created on step 1)
-	Mat masked;
-	gray.copyTo(masked, filled);
-
-	//imshow("Canny_Masked", masked);
-
-	dst = masked.clone();
+	// 6) Erode
+	int erodekernelSize = 15; //kernel size
+	cv::Mat erodeelem = 255 * cv::Mat::ones(erodekernelSize, erodekernelSize, CV_8UC1); // 19x19 kernel matrix filled with 255
+	cv::erode(binary, binary, erodeelem);
+	cv::bitwise_not(binary, dst);
 }
 
 void MarkDetectedPlayer(Mat& img, Rect& detectedRect) {

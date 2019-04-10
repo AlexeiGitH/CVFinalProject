@@ -31,6 +31,12 @@ void makeGray(cv::Mat& src, cv::Mat& dst) {
 	cv::cvtColor(src, dst, CV_RGB2GRAY);
 }
 
+
+/*
+threshold the image by setting all pixel values less than 225
+to 255 (white; foreground) and all pixel values >= 225 to 255
+(black; background), thereby segmenting the image
+*/
 cv::Mat createBinaryImage(cv::Mat& src, int threshold, double maxVal) {
 	Mat dst;
 	cv::threshold(src, dst, threshold, maxVal, THRESH_BINARY);
@@ -39,5 +45,19 @@ cv::Mat createBinaryImage(cv::Mat& src, int threshold, double maxVal) {
 
 
 void createBinaryImage(cv::Mat& src, cv::Mat& dst, int threshold, double maxVal) {
-	cv::threshold(src, dst, threshold, maxVal, THRESH_BINARY);
+	cv::threshold(src, dst, threshold, maxVal, THRESH_BINARY_INV);
+}
+
+void addContrast(Mat& src, Mat& dst, double contrast = 0) {
+	if (contrast != 0) {
+		double f = 131.0 * (contrast + 127.0) / (127.0 * (131.0 - contrast));
+		double alpha_c = f;
+		double gamma_c = 127 * (1 - f);
+		cv::addWeighted(src, alpha_c, src, 0, gamma_c, dst);
+	}
+}
+
+void applyMask(Mat& src, Mat& dst, Mat& mask)
+{
+	src.copyTo(dst, mask);
 }
