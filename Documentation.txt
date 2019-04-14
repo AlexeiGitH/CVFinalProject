@@ -1,0 +1,68 @@
+HOCKEY PLAYER DETECTION - DOCUMENTATION AND INSTRUCTIONS
+---------------------------------------------------
+
+ImageAnnotator/
+---------------
+Contains a cpp program to annotate rectangles onto images to build our grund truth dataset.
+
+CSVReader.h: reads in data (filenames) from a csv file for use in the program
+
+Source.cpp: Main file, must pass csv file as argument, this program iterates over images in a passed in image set,
+			opening each image in a window. The user can then use the mouse to create rectangles over players in
+			the image to define the ground truth of the image.
+			
+Object-Detector/
+----------------
+Contains a python programs to manually annotate images, create a dataset of the annotated images, and train a machine learning model
+to recognize the objects being annotated in these images.
+
+Instructions to to run the annotator are included in README.md
+
+TrackPlayers/
+-------------
+Contains a cpp program to detect hockey players in a hockey arena
+
+To run the program over an image simply startup the project in Visual Studio 2012, make sure the image to be used is in the 
+same folder as main.cpp, set debugging arguments to the image filename, and run the program.
+
+Tools.hpp: Contains some simple functions which are used in the main program
+	drawCircle(): Draws a circle formatted to be placed near the bottom of a drawn rectangle on the image
+	
+	rectForCircle(): Draws a smaller rectangle within a bounding rectangle, which will provide a guide for drawing a circle
+	
+	scaleRect(): scales a rectangle so it will be drawn on the same position in the image no matter how the image has grown/shrunk
+	
+	makeGray(): converts an RGB image to Grayscale
+	
+	createBinaryImage(): Creates a binary image from the passed in image
+	
+	addContrast(): Adds contrast to an image
+	
+	applyMask(): Applies mask to an image
+	
+HogDetector.cpp: Where the player detection takes place
+	hog: instance of a HogDetector with the specified parameters
+	
+	detect(): runs the hog detector and returns a vector of found bounding rectangles
+	
+	adjustRect(): Slightly adjusts the returned rectangles to make them cleaner
+	
+	descrition(): Returns a string of all the detector parameters
+	
+Main.cpp: Main program to run player detection, MUST PASS IN IMAGE FILENAME
+	main(): reads passed in image, determines new filenames for output images, and calls all the functions
+	
+	DrawDetected(): draws detected rectangles on the source image
+	
+	save(): saves passed in image to current folder
+	
+	PrepareForProcessing(): Prepares the current image to be processed by adding contrast, converting color, etc
+	
+	MakeMaskFromEges(): Creates a mask around the ice surface to be applies later
+	
+	MakeMask(): Add contrast, Convert to grayscale, Threshhold gray image, Use big kernel size to remove players and noise from the rink
+				Apply morph opening to remove small details, Blur the image, Dilate to remove some big chunks
+				Erode to return to get back lost area of the rink, Use bitwise flip to get a mask
+				
+	MarkDetectedPlayer(): Draws bounding rectangles and circles on the source image
+	
