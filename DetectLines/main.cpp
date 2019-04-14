@@ -79,9 +79,6 @@ int main(int argc, char** argv) {
 	cv::Mat videoFrame;
 	for (;;) {
 
-		if (frameNumber % 5) {
-			cout << "Frame number is " << frameNumber << endl;
-		}
 		cap >> videoFrame;
 		videoFrame += cv::Scalar(brighter, brighter, brighter); //make the copy brighter
 		cv::Mat frame; //scaled and processed frame

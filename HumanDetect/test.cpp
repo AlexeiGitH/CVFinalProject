@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include "../Shared/CSVReader.h"
-
+#include "detectRectangle.h"
 
 #pragma comment(lib, "vfw32.lib")
 #pragma comment(lib, "comctl32.lib" )
@@ -15,7 +15,6 @@ using namespace std;
 void DrawDetected(Mat& frame, std::vector<Rect>& detected, Scalar color = Scalar(0, 0, 255), int thinkness = 1);
 //saves an image to a file
 bool save(Mat& frame, string toFile);
-
 
 std::vector<std::string> split(std::string strToSplit, char delimeter);
 std::map<string, vector<cv::Point>> parseGTFileData(vector<string> data);
@@ -36,7 +35,7 @@ int main(int argc, char** argv) {
 	}
 	std::map<string, vector<cv::Point>> gtfilesWithPoints = parseGTFileData(gtLines);
 
-	//Load agl1 data
+	//Load alg1 data
 	CSVReader algHaarData("HaasDetection-Results.csv");
 	algHaarData.readLines('\n');
 	vector<string> algHaarLines = algHaarData.getLines();
@@ -47,12 +46,75 @@ int main(int argc, char** argv) {
 	}
 	std::map<string, vector<cv::Rect>> alg1filesWithRects = parseAlgFileData(algHaarLines);
 
-
+	std::ofstream results;
+	results.open("PerformanceResultsHaar.csv");
+	results << "FileName, P, R, F1, TP, FP, FN" << endl;
 	//test data
+	cout << "GT images: " << gtfilesWithPoints.size() << endl; 
+	cout << "Alg1 images: " << alg1filesWithRects.size() << endl;
+	for (auto &entity : gtfilesWithPoints) {
+		const string& fileName = entity.first;
+		//find rects for this image
+		auto iterator = alg1filesWithRects.find(fileName);
+		if (iterator != alg1filesWithRects.end()) {
+			vector<Rect>& rects = iterator->second;
+			PrecisionCalc detect;
+			Point* points = entity.second.data();
+			int pointsArraySize = entity.second.size();
 
+			Rect* rectsArray = rects.data();
+			int rectsArraySize = rects.size();
+			detect.calculateAccuracy(points, rectsArray, pointsArraySize, rectsArraySize);
+			results << fileName << "," << detect.P << "," << detect.R << "," << detect.F 
+				<< "," << detect.TP << "," << detect.FP<< "," << detect.FN  << endl;
+		}
+		else {
+			std::cout << "Not found\n";
+		}
+	}
 
+	//Load agl2 data
+	CSVReader algHOGData("HOGDetection-Results.csv");
+	algHOGData.readLines('\n');
+	vector<string> algHOGLines = algHOGData.getLines();
+	if (algHOGLines.size() == 0)
+	{
+		cerr << "Alg(HOGResults) file is empty\n";
+		return 2;
+	}
+	std::map<string, vector<cv::Rect>> alg2filesWithRects = parseAlgFileData(algHOGLines);
+
+	std::ofstream results2;
+	results2.open("PerformanceResultsHOG.csv");
+	results2 << "FileName, P, R, F1, TP, FP, FN" << endl;
+	//test data
+	cout << "GT images: " << gtfilesWithPoints.size() << endl;
+	cout << "Alg1 images: " << alg2filesWithRects.size() << endl;
+	for (auto &entity : gtfilesWithPoints) {
+		const string& fileName = entity.first;
+		//find rects for this image
+		auto iterator = alg2filesWithRects.find(fileName);
+		if (iterator != alg2filesWithRects.end()) {
+			vector<Rect>& rects = iterator->second;
+			PrecisionCalc detect;
+			Point* points = entity.second.data();
+			int pointsArraySize = entity.second.size();
+
+			Rect* rectsArray = rects.data();
+			int rectsArraySize = rects.size();
+			detect.calculateAccuracy(points, rectsArray, pointsArraySize, rectsArraySize);
+			results2 << fileName << "," << detect.P << "," << detect.R << "," << detect.F
+				<< "," << detect.TP << "," << detect.FP << "," << detect.FN << endl;
+		}
+		else {
+			std::cout << "Not found\n";
+		}
+	}
+	results.close();
+	results2.close();
 	return 0;
 }
+
 
 std::map<string, vector<cv::Point>> parseGTFileData(vector<string> data) {
 	
@@ -86,7 +148,6 @@ std::map<string, vector<cv::Point>> parseGTFileData(vector<string> data) {
 	}
 	return filesWithPoints;
 }
-
 std::map<string, vector<cv::Rect>> parseAlgFileData(vector<string> data) {
 	std::map<string, vector<cv::Rect>> filesWithRects;
 

@@ -22,7 +22,6 @@ int HOGPeopleDefaultDetect(vector<string> images);
 void testHOG(string imageName);
 
 
-
 int detectOnImages(int argc, char** argv) {
 	if (argc < 2)
 		cerr << "Please enter a filename" << endl;

@@ -8,9 +8,11 @@
 using namespace cv;
 using namespace std;
 
-class detectRectangle {
+class PrecisionCalc {
 
 public:
+	double R, P, F;
+	int FP, FN, TP, TN;
 	bool detectPoint(cv::Point p, cv::Rect r) {
 		//if the point is horizontally within the rectangle
 		if (p.x >= r.x && p.x <= (r.x + r.width)) {
@@ -29,11 +31,10 @@ public:
 
 	void calculateAccuracy(cv::Point *p, cv::Rect *r, int numPoint, int numRect) {
 		bool found = false;
-		int FP = 0;
-		int FN = 0;
-		int TP = 0;
-		int TN = 0;
-		int total = numPoint;
+		FP = 0;
+		FN = 0;
+		TP = 0;
+		TN = 0;
 
 		//for every rectangle, check if there is a point inside
 		//if true, add a true positive and stop checking (prevents multiple points from adding multiple TP for a single rect)
@@ -50,7 +51,7 @@ public:
 			if (!found) {
 				FP++;
 			}
-
+			found = false;
 		}
 
 		//reset found
@@ -67,13 +68,19 @@ public:
 			if (!found) {
 				FN++;
 			}
+			found = false;
 		}
 
-		double R = TP / (TP + FN);
+		R = (double)TP / (double)(TP + FN);
 
-		double P = TP / (TP + FP);
+		P = (double)TP / (double)(TP + FP);
 
-		double F = (1 + 1)*((P*R) / ((1 * P) + R));
-
+		if (_isnan(P))
+			P = 0.0;
+		if (_isnan(R))
+			R = 0.0;
+		F = (double)(1 + 1)*((P*R) / ((1 * P) + R));
+		if (_isnan(F))
+			F = 0.0;
 	}
 };
