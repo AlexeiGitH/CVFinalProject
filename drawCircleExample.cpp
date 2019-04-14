@@ -17,11 +17,11 @@ Rect rectForCircle(cv::Rect r) {
 	return Rect((r.x + r.width*0.0625), (r.y + r.height - (r.width*0.9*0.75)), r.width*0.9, r.width*0.9*0.75);
 }
 
-cv::Rect scaleRect(cv::Rect r, double scale) {
+cv::Rect scaleRect(cv::Rect& r, double scale) {
 	return Rect((r.x*scale), (r.y*scale), (r.width*scale), (r.height*scale));
 }
-
-int main(int argc, char** argv) {
+/*
+int drawcirclemain(int argc, char** argv) {
 
 	if (argc < 1) {
 		return 0;
@@ -85,3 +85,4 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
+*/

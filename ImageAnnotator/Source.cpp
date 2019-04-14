@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
-#include "CSVReader.h"
+#include "../Shared/CSVReader.h"
 
 #pragma comment(lib, "vfw32.lib")
 #pragma comment(lib, "comctl32.lib" )

@@ -14,7 +14,7 @@
     <ProjectGuid>{17F027AB-1653-456A-846D-52D08CEAB79D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>HumanDetect</RootNamespace>
-    <ProjectName>HumanDetectTest</ProjectName>
+    <ProjectName>Milestone2Evaluate</ProjectName>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Shared\CSVReader.h" />
+    <ClInclude Include="detectRectangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

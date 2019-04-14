@@ -1,29 +1,12 @@
 HOCKEY PLAYER DETECTION - DOCUMENTATION AND INSTRUCTIONS
 ---------------------------------------------------
 
-ImageAnnotator/
----------------
-Contains a cpp program to annotate rectangles onto images to build our grund truth dataset.
-
-CSVReader.h: reads in data (filenames) from a csv file for use in the program
-
-Source.cpp: Main file, must pass csv file as argument, this program iterates over images in a passed in image set,
-			opening each image in a window. The user can then use the mouse to create rectangles over players in
-			the image to define the ground truth of the image.
-			
-Object-Detector/
-----------------
-Contains a python programs to manually annotate images, create a dataset of the annotated images, and train a machine learning model
-to recognize the objects being annotated in these images.
-
-Instructions to to run the annotator are included in README.md
 
 TrackPlayers/
 -------------
 Contains a cpp program to detect hockey players in a hockey arena
 
-To run the program over an image simply startup the project in Visual Studio 2012, make sure the image to be used is in the 
-same folder as main.cpp, set debugging arguments to the image filename, and run the program.
+To run the program over an image compile the program and run passing a path to an image as an argument. File will detect players, preparing an image before detection and will save a result as filename-out.jpg
 
 Tools.hpp: Contains some simple functions which are used in the main program
 	drawCircle(): Draws a circle formatted to be placed near the bottom of a drawn rectangle on the image
@@ -38,9 +21,18 @@ Tools.hpp: Contains some simple functions which are used in the main program
 	
 	addContrast(): Adds contrast to an image
 	
-	applyMask(): Applies mask to an image
+	applyMask(): Accepts 3 images, a mask, an image to apply that mask over and the result image pointer.
 	
-HogDetector.cpp: Where the player detection takes place
+Detector.hpp: 
+The main class that has methods to prepare images for the processing. 
+Has a method MakeMask, that automatically detects the rink area to mask the image and remove the crowd are.
+	Apply morph opening to remove small details, Blur the image, Dilate to remove some big chunks, Erode to return to get back lost area of the rink, Use bitwise flip to get a mask. Comments are in Detector.hpp.
+
+Method PrepareForProcessing makes players bodies well defined on rink by taking a difference between the original and blurred+dilated image. (pass option 2 to the method)
+Detect - detects player on image without pre-processing the image (detect on the image you pass, you can prepare your own image as you like)
+DetectWithPreprocessing - detects player on image preparing the image first (mask + contours)
+
+HogDetector.cpp: Wrapper class to easily use HOG detector
 	hog: instance of a HogDetector with the specified parameters
 	
 	detect(): runs the hog detector and returns a vector of found bounding rectangles
@@ -55,14 +47,25 @@ Main.cpp: Main program to run player detection, MUST PASS IN IMAGE FILENAME
 	DrawDetected(): draws detected rectangles on the source image
 	
 	save(): saves passed in image to current folder
-	
-	PrepareForProcessing(): Prepares the current image to be processed by adding contrast, converting color, etc
-	
-	MakeMaskFromEges(): Creates a mask around the ice surface to be applies later
-	
-	MakeMask(): Add contrast, Convert to grayscale, Threshhold gray image, Use big kernel size to remove players and noise from the rink
-				Apply morph opening to remove small details, Blur the image, Dilate to remove some big chunks
-				Erode to return to get back lost area of the rink, Use bitwise flip to get a mask
-				
+			
 	MarkDetectedPlayer(): Draws bounding rectangles and circles on the source image
 	
+
+
+
+ImageAnnotator/
+---------------
+Contains a cpp program to annotate rectangles onto images to build our grund truth dataset.
+
+CSVReader.h: reads in data (filenames) from a csv file for use in the program
+
+Source.cpp: Main file, must pass csv file as argument, this program iterates over images in a passed in image set,
+			opening each image in a window. The user can then use the mouse to put dots on players in
+			the image to define the ground truth of the image.
+			
+Object-Detector/
+----------------
+Contains a python programs to manually annotate images, create a dataset of the annotated images, and train a machine learning model
+to recognize the objects being annotated in these images.
+
+Instructions to run the annotator are included in INSTRUCTIONS.md file inside Object-Detector directory

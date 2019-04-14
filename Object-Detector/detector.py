@@ -69,4 +69,5 @@ class ObjectDetector(object):
             if annotate is not None and type(annotate)==str:
                 cv2.putText(image,annotate,(x+5,y-5),cv2.FONT_HERSHEY_SIMPLEX,1.0,(128,255,0),2)
         cv2.imshow("Detected",image)
+        cv2.imwrite("Detected.jpg",image)
         cv2.waitKey(0)

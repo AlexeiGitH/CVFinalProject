@@ -1,8 +1,6 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include <iostream>
-#include <fstream>
 
 #pragma comment(lib, "vfw32.lib")
 #pragma comment(lib, "comctl32.lib" )
@@ -14,7 +12,7 @@ using namespace cv;
 void drawCircle(cv::Mat& img, cv::Rect& r, int scale = 1, cv::Scalar color = Scalar(0,0,255), int thinckness = CV_FILLED) {
 	cv::Point center(r.x + r.width / 2, r.y+r.height/2);
 	//double hight = r.width * 0.38;
-	const cv::RotatedRect rect(center, Size(r.width*0.9, r.height*0.7), 0);
+	const cv::RotatedRect rect(center, Size(r.width*0.7, r.height*0.5), 0);
 	cv::ellipse(img, rect, color, thinckness);
 }
 
